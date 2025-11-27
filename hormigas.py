@@ -23,7 +23,7 @@ p = 0.2 #   -p = 0.2
 q = 1 #   -q = 1
 a = 1.5 #   -a = 1.5
 b = 0.8 #   -b = 0.8
-max_caminatas = 50 # Realizar 50 iteraciones(caminatas)
+caminatas = 50 # Realizar 50 iteraciones(caminatas)
 
 def print_matrix(M):
     for i in range(len(M)):
@@ -114,16 +114,19 @@ def calcular_distancia(camino, MA):
 
 def actualizar_feromonas(caminos, distancias, MT):
     # Evaporación de feromonas
+    # Tt+1(i,j) = (1 - p) * T(i, j) + SUMA(delta_tk(i,j))
     for i in range(len(MT)):
         for j in range(len(MT[i])):
-            MT[i][j] *= (1 - p)
-            MT[j][i] *= (1 - p)
+            MT[i][j] *= (1 - p) # (1 - p) * T(i, j)
+            MT[j][i] *= (1 - p) # (1 - p) * T(j, i)
 
     # Añadir feromonas por cada camino
     for camino, distancia in zip(caminos, distancias):
+        # delta_tk(i,j) = q / distancia
         deposito = q / distancia
-        for i in range(len(camino) - 1):
+        for i in range(len(camino) - 1): # SUMA(delta_tk(i,j))
             MT[camino[i]][camino[i+1]] += deposito
+            MT[camino[i+1]][camino[i]] += deposito
 
 def print_caminos(caminos, distancias):
     for i in range(len(caminos)):
@@ -134,11 +137,40 @@ def print_HoF(HoF, MA):
     for i in range(len(HoF)):
         print("Gen ", i, " - ", HoF[i], " - ", calcular_distancia(HoF[i], MA))
 
-# Ejecutar algoritmo
-mejor_distancia = float('inf') # se inicializa un número muy grande, puesto que queremos minimizar
-mejor_camino = None
+def ACO_algorithm(MA, MN, MT, max_caminatas = 100, stop_if_converge = False, convergence = 10): # Ejecutar algoritmo ACO
+    mejor_distancia = float('inf') # se inicializa un número muy grande, puesto que queremos minimizar
+    mejor_camino = None
+    HoF = [] # Hall of Fame
+    same_distance_counter = 0
 
-HoF = [] # Hall of Fame
+    for i in range(max_caminatas): # se detiene al alcanzar las maximas caminatas dadas
+        same_distance_counter += 1 # we get to initialize this counter
+        print("Caminos encontrados en caminata", i,"\n")
+        caminos = colonia_hormigas()
+        distancias = [calcular_distancia(camino, MA) for camino in caminos]
+        print_caminos(caminos, distancias)
+
+        actualizar_feromonas(caminos, distancias, MT)
+        print("Matriz de feromonas \n")
+        print_matrix(MT) # DEBUGGING
+
+        # Guardar mejor solución
+        min_dist = min(distancias)
+        mejor_camino = caminos[distancias.index(min_dist)]
+        HoF.append(mejor_camino)
+        if min_dist < mejor_distancia:
+            mejor_distancia = min_dist
+            gbest_camino = caminos[distancias.index(min_dist)]
+            same_distance_counter = 0 # here it resets
+        if stop_if_converge == True:
+            if same_distance_counter >= convergence:
+                print("Convergencia en caminata ", i, "\n")
+                break
+
+    print("Mejor camino encontrado: ", gbest_camino, " - ", mejor_distancia)
+
+    return HoF
+
 
 # Definimos la matriz de distancias
 MA = [[0, 6, 9, 17, 13, 21],
@@ -159,24 +191,8 @@ MT = m_feromonas(MA, t_ini=0.1)
 print("Matriz de feromonas \n")
 print_matrix(MT) # DEBUGGING
 
-for i in range(max_caminatas): # se detiene al alcanzar las maximas caminatas dadas
-    print("Caminos encontrados en caminata", i,"\n")
-    caminos = colonia_hormigas()
-    distancias = [calcular_distancia(camino, MA) for camino in caminos]
-    print_caminos(caminos, distancias)
+HoF = ACO_algorithm(MA, MN, MT, max_caminatas = caminatas) # Caso SIN parar si hay convergencia
+#HoF = ACO_algorithm(MA, MN, MT,max_caminatas = caminatas, stop_if_converge = True, convergence = 5) # Caso que PARA si hay convergencia
 
-    actualizar_feromonas(caminos, distancias, MT)
-    print("Matriz de feromonas \n")
-    print_matrix(MT) # DEBUGGING
-
-    # Guardar mejor solución
-    min_dist = min(distancias)
-    mejor_camino = caminos[distancias.index(min_dist)]
-    HoF.append(mejor_camino)
-    if min_dist <= mejor_distancia:
-        mejor_distancia = min_dist
-        gbest_camino = caminos[distancias.index(min_dist)]
-
-print("Mejor camino encontrado: ", gbest_camino, " - ", mejor_distancia)
 print("\nHall of Fame")
 print_HoF(HoF, MA)
