@@ -112,11 +112,12 @@ def calcular_distancia(camino, MA):
         distancia += MA[camino[i]][camino[i+1]] # checamos en la matriz de distancias de un punto A -> B
     return distancia
 
-def actualizar_feromonas(caminos, distancias):
+def actualizar_feromonas(caminos, distancias, MT):
     # Evaporación de feromonas
     for i in range(len(MT)):
         for j in range(len(MT[i])):
             MT[i][j] *= (1 - p)
+            MT[j][i] *= (1 - p)
 
     # Añadir feromonas por cada camino
     for camino, distancia in zip(caminos, distancias):
@@ -129,10 +130,15 @@ def print_caminos(caminos, distancias):
         print(caminos[i], " - ", distancias[i])
     print("\n")
 
+def print_HoF(HoF, MA):
+    for i in range(len(HoF)):
+        print("Gen ", i, " - ", HoF[i], " - ", calcular_distancia(HoF[i], MA))
 
 # Ejecutar algoritmo
 mejor_distancia = float('inf') # se inicializa un número muy grande, puesto que queremos minimizar
 mejor_camino = None
+
+HoF = [] # Hall of Fame
 
 # Definimos la matriz de distancias
 MA = [[0, 6, 9, 17, 13, 21],
@@ -159,13 +165,18 @@ for i in range(max_caminatas): # se detiene al alcanzar las maximas caminatas da
     distancias = [calcular_distancia(camino, MA) for camino in caminos]
     print_caminos(caminos, distancias)
 
-    actualizar_feromonas(caminos, distancias)
+    actualizar_feromonas(caminos, distancias, MT)
+    print("Matriz de feromonas \n")
+    print_matrix(MT) # DEBUGGING
 
     # Guardar mejor solución
     min_dist = min(distancias)
-    if min_dist < mejor_distancia:
+    mejor_camino = caminos[distancias.index(min_dist)]
+    HoF.append(mejor_camino)
+    if min_dist <= mejor_distancia:
         mejor_distancia = min_dist
-        mejor_camino = caminos[distancias.index(min_dist)]
+        gbest_camino = caminos[distancias.index(min_dist)]
 
-print(f"Mejor camino encontrado: {[x+1 for x in mejor_camino]}")
-print(f"Distancia total: {mejor_distancia}")
+print("Mejor camino encontrado: ", gbest_camino, " - ", mejor_distancia)
+print("\nHall of Fame")
+print_HoF(HoF, MA)
