@@ -59,9 +59,11 @@ def ruleta(probabilidades):
         if r <= valor:
             return i # retornamos el valor del nodo al que debemos de ir
 
-def colonia_hormigas():# colonia_hormigas() devuelve una lista de los caminos encontrados por cada hormiga
+def colonia_hormigas(MN, MT):# colonia_hormigas() devuelve una lista de los caminos encontrados por cada hormiga
     # Recorrido de cada hormiga
-    nodos = list(range(6))
+    N = len(MN)
+    #print(n) # DEBUGGING
+    nodos = list(range(N))
     #print(nodos) # DEBUGGING
     c_hormigas = []
 
@@ -78,9 +80,9 @@ def colonia_hormigas():# colonia_hormigas() devuelve una lista de los caminos en
 
             for nodo_siguiente in nodos_disponibles:
                 # Aqui se usa la fórumla de T(i,j)**a * N(i,j)**b
-                feromona = MT[nodo_actual][nodo_siguiente] ** a
-                visibilidad = MN[nodo_actual][nodo_siguiente] ** b
-                probabilidades.append(feromona * visibilidad)
+                feromona = MT[nodo_actual][nodo_siguiente]
+                visibilidad = MN[nodo_actual][nodo_siguiente]
+                probabilidades.append((feromona**a) * (visibilidad**b))
 
             # Una vez que se tiene a todas las probabilidades, se suman para luego dividir a las probabilidades entre la suma
             suma_probabilidades = sum(probabilidades)
@@ -98,7 +100,7 @@ def colonia_hormigas():# colonia_hormigas() devuelve una lista de los caminos en
 
             l_tabu.append(nodo_actual) # se agrega el nodo a la lista tabú
             hormiga.append(nodo_actual) # guarda el camino
-            if len(l_tabu) >= 6: # se sale una vez que todos los nodos han sido visitados
+            if len(l_tabu) >= N: # se sale una vez que todos los nodos han sido visitados
                 break
         # Se tiene que regresar al nodo inicial
         hormiga.append(hormiga[0])
@@ -118,7 +120,7 @@ def actualizar_feromonas(caminos, distancias, MT):
     for i in range(len(MT)):
         for j in range(len(MT[i])):
             MT[i][j] *= (1 - p) # (1 - p) * T(i, j)
-            MT[j][i] *= (1 - p) # (1 - p) * T(j, i)
+            #MT[j][i] *= (1 - p) # (1 - p) * T(j, i)
 
     # Añadir feromonas por cada camino
     for camino, distancia in zip(caminos, distancias):
@@ -137,7 +139,7 @@ def print_HoF(HoF, MA):
     for i in range(len(HoF)):
         print("Gen ", i, " - ", HoF[i], " - ", calcular_distancia(HoF[i], MA))
 
-def ACO_algorithm(MA, MN, MT, max_caminatas = 100, stop_if_converge = False, convergence = 10): # Ejecutar algoritmo ACO
+def ACO_algorithm(MA, MN, MT, max_caminatas = 100, stop_if_converge = False, convergence = 10, debugg = True): # Ejecutar algoritmo ACO
     mejor_distancia = float('inf') # se inicializa un número muy grande, puesto que queremos minimizar
     mejor_camino = None
     HoF = [] # Hall of Fame
@@ -145,14 +147,16 @@ def ACO_algorithm(MA, MN, MT, max_caminatas = 100, stop_if_converge = False, con
 
     for i in range(max_caminatas): # se detiene al alcanzar las maximas caminatas dadas
         same_distance_counter += 1 # we get to initialize this counter
-        print("Caminos encontrados en caminata", i,"\n")
-        caminos = colonia_hormigas()
+        caminos = colonia_hormigas(MN, MT)
         distancias = [calcular_distancia(camino, MA) for camino in caminos]
-        print_caminos(caminos, distancias)
+        if debugg == True:
+            print("Caminos encontrados en caminata", i,"\n") # DEBUGGING
+            print_caminos(caminos, distancias) # DEBUGGING
 
         actualizar_feromonas(caminos, distancias, MT)
-        print("Matriz de feromonas \n")
-        print_matrix(MT) # DEBUGGING
+        if debugg == True:
+            print("Matriz de feromonas \n")
+            print_matrix(MT) # DEBUGGING
 
         # Guardar mejor solución
         min_dist = min(distancias)
@@ -160,8 +164,8 @@ def ACO_algorithm(MA, MN, MT, max_caminatas = 100, stop_if_converge = False, con
         HoF.append(mejor_camino)
         if min_dist < mejor_distancia:
             mejor_distancia = min_dist
-            gbest_camino = caminos[distancias.index(min_dist)]
-            same_distance_counter = 0 # here it resets
+            gbest_camino = mejor_camino
+            same_distance_counter = 0 # <-- Reset
         if stop_if_converge == True:
             if same_distance_counter >= convergence:
                 print("Convergencia en caminata ", i, "\n")
@@ -192,7 +196,7 @@ print("Matriz de feromonas \n")
 print_matrix(MT) # DEBUGGING
 
 HoF = ACO_algorithm(MA, MN, MT, max_caminatas = caminatas) # Caso SIN parar si hay convergencia
-#HoF = ACO_algorithm(MA, MN, MT,max_caminatas = caminatas, stop_if_converge = True, convergence = 5) # Caso que PARA si hay convergencia
+#HoF = ACO_algorithm(MA, MN, MT,max_caminatas = caminatas, stop_if_converge = True, convergence = 5, debugg = False) # Caso que PARA si hay convergencia + no prints
 
 print("\nHall of Fame")
 print_HoF(HoF, MA)
