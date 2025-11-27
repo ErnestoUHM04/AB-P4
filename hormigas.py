@@ -26,7 +26,7 @@ b = 0.8 #   -b = 0.8
 max_caminatas = 50 # Realizar 50 iteraciones(caminatas)
 
 def print_matrix(M):
-    for i in range(len(MA)):
+    for i in range(len(M)):
         print(f"{M[i][0]:.3f}\t", f"{M[i][1]:.3f}\t", f"{M[i][2]:.3f}\t", f"{M[i][3]:.3f}\t", f"{M[i][4]:.3f}\t", f"{M[i][5]:.3f}\t")
     print("\n")
 
@@ -41,7 +41,7 @@ def m_feromonas(MA, t_ini = 0.1):
     #   Recomendable valores entre 0 y 1
     #   Recomendable todas las aritas con el mismo valor
     # Feromonas de las aristas
-    MT = [[t_ini if MA[i][j] != 0 else 0 for j in range(len(MA))] for i in range(len(MA))]
+    return [[t_ini if MA[i][j] != 0 else 0 for j in range(len(MA))] for i in range(len(MA))]
 
 def ruleta(probabilidades):
     # se genera un número random entre 0 y 1
